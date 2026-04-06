@@ -45,7 +45,7 @@ body {
 
 .study-panel {
   width: min(1200px, 100%);
-  min-height: calc(100vh - clamp(1.4rem, 3.2vw, 2.4rem));
+  min-height: clamp(380px, 72vh, 760px);
   border: 2px solid var(--line-soft);
   border-radius: 26px;
   background: var(--panel-bg);
@@ -99,7 +99,7 @@ body {
 .action-card {
   border: 2px solid var(--line-soft);
   border-radius: 16px;
-  min-height: clamp(260px, 48vh, 560px);
+  min-height: clamp(170px, 32vh, 300px);
   padding: 1.25rem;
   background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.78));
   display: grid;
@@ -160,6 +160,157 @@ body {
   outline-offset: 2px;
 }
 
+.upload-panel {
+  grid-template-rows: auto auto;
+  min-height: clamp(320px, 62vh, 600px);
+}
+
+.upload-form {
+  margin-top: clamp(1.1rem, 2.5vw, 1.8rem);
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.upload-drop-zone {
+  border: 2px solid var(--line-soft);
+  border-radius: 16px;
+  min-height: clamp(150px, 28vh, 240px);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.95), rgba(244, 249, 255, 0.8));
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.45rem;
+  text-align: center;
+  cursor: pointer;
+  padding: 1.1rem;
+  box-shadow: inset 0 0 0 4px rgba(0, 114, 178, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.upload-drop-zone:hover {
+  border-color: var(--upload-accent);
+  box-shadow: 0 10px 22px rgba(0, 114, 178, 0.16), inset 0 0 0 4px rgba(0, 114, 178, 0.13);
+  transform: translateY(-2px);
+}
+
+.upload-drop-zone:focus-within {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.upload-input {
+  width: min(380px, 90%);
+  padding: 0.5rem;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  color: var(--text-subtle);
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.upload-headline {
+  margin-top: 0.45rem;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  color: var(--text-main);
+}
+
+.upload-help-text {
+  color: var(--text-subtle);
+  font-size: 1rem;
+}
+
+.upload-file-meta {
+  margin-top: 0.2rem;
+  color: #0b5f8a;
+  font-weight: 600;
+}
+
+.upload-status {
+  margin: 0;
+  min-height: 1.5rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.upload-status-error {
+  color: #8a1c1c;
+}
+
+.upload-status-success {
+  color: #0b5f8a;
+}
+
+.upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.small-ghost-button,
+.small-solid-button {
+  border-radius: 16px;
+  min-width: 92px;
+  padding: 0.46rem 0.95rem;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  font-size: 1.1rem;
+  border: 2px solid var(--line-soft);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.small-ghost-button {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--text-main);
+}
+
+.small-solid-button {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(246, 250, 255, 0.86));
+  color: var(--text-main);
+  box-shadow: inset 0 0 0 2px rgba(0, 114, 178, 0.12);
+}
+
+.small-ghost-button:hover,
+.small-solid-button:hover {
+  transform: translateY(-2px);
+  border-color: var(--upload-accent);
+  box-shadow: 0 7px 16px rgba(0, 114, 178, 0.18);
+}
+
+.small-ghost-button:focus-visible,
+.small-solid-button:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.placeholder-panel {
+  grid-template-rows: auto auto;
+}
+
+.placeholder-content {
+  margin-top: clamp(1.2rem, 2.8vw, 2rem);
+  border: 2px solid var(--line-soft);
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.78));
+  min-height: clamp(220px, 36vh, 350px);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 1.2rem;
+}
+
+.placeholder-content h2 {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+}
+
+.placeholder-content p {
+  margin: 0;
+  color: var(--text-subtle);
+}
+
 @media (max-width: 850px) {
   .study-panel {
     min-height: auto;
@@ -171,5 +322,13 @@ body {
 
   .action-card {
     min-height: 170px;
+  }
+
+  .upload-drop-zone {
+    min-height: 160px;
+  }
+
+  .upload-actions {
+    justify-content: center;
   }
 }
