@@ -26,6 +26,196 @@ The backend exposes each endpoint in two forms: base route and `/api`-prefixed r
 - Purpose: Generate and return an LLM summary for the selected document.
 - Notes: If a summary already exists in DB, the cached summary is returned.
 
+## Test APIs with Postman or Python
+
+Use this section to test every backend endpoint manually.
+
+Base URL (local):
+- `http://127.0.0.1:8000`
+
+Important notes:
+- Direct backend routes in `backend/app.py` are `/upload`, `/files`, `/files/{file_id}/download`, and `/files/{file_id}/summary`.
+
+### 1) Upload File
+
+Endpoint:
+- `POST /upload`
+
+What it does:
+- Uploads a document to the server and stores metadata in SQLite.
+
+Request details:
+- Method: `POST`
+- Body type: `form-data`
+- Field name: `document`
+- Value: file to upload
+
+Expected success response (HTTP 200):
+
+```json
+{
+	"file_id": "a716cf9639e14c51a5a490161ff441cf",
+	"filename": "Information_Products.pdf"
+}
+```
+
+Possible error responses:
+- HTTP 400: file is larger than 20 MB
+- HTTP 500: upload failed unexpectedly
+
+Postman steps:
+1. Create a new request with method `POST`.
+2. URL: `http://127.0.0.1:8000/upload`.
+3. Go to Body -> form-data.
+4. Add key `document`, change type to File, select your file.
+5. Click Send.
+
+Python example:
+
+```python
+import requests
+
+BASE_URL = "http://127.0.0.1:8000"
+file_path = "test_data/Information_Products.pdf"
+
+with open(file_path, "rb") as f:
+		files = {"document": ("Information_Products.pdf", f)}
+		response = requests.post(f"{BASE_URL}/upload", files=files)
+
+print(response.status_code)
+print(response.json())
+```
+
+### 2) List Files
+
+Endpoint:
+- `GET /files`
+
+What it does:
+- Returns metadata for all uploaded documents.
+
+Expected success response (HTTP 200):
+
+```json
+{
+	"files": [
+		{
+			"file_id": "a716cf9639e14c51a5a490161ff441cf",
+			"filename": "Information_Products.pdf",
+			"size": 1942,
+			"uploaded_at": "2026-04-07T10:05:11.284231",
+			"summary": null
+		}
+	]
+}
+```
+
+Postman steps:
+1. Create a new request with method `GET`.
+2. URL: `http://127.0.0.1:8000/files`.
+3. Click Send.
+
+Python example:
+
+```python
+import requests
+
+BASE_URL = "http://127.0.0.1:8000"
+response = requests.get(f"{BASE_URL}/files")
+
+print(response.status_code)
+print(response.json())
+```
+
+### 3) Download File by ID
+
+Endpoint:
+- `GET /files/{file_id}/download`
+
+What it does:
+- Downloads the original uploaded document for the provided `file_id`.
+
+Expected success response:
+- HTTP 200 with file content (binary stream)
+- `Content-Disposition` includes original filename
+
+Possible error responses:
+- HTTP 404: file ID not found in DB or file missing on disk
+- HTTP 500: server-side failure while downloading
+
+Postman steps:
+1. Create a new request with method `GET`.
+2. URL: `http://127.0.0.1:8000/files/a716cf9639e14c51a5a490161ff441cf/download`.
+3. Click Send.
+4. Use Save Response to store the downloaded file.
+
+Python example:
+
+```python
+import requests
+
+BASE_URL = "http://127.0.0.1:8000"
+file_id = "a716cf9639e14c51a5a490161ff441cf"
+
+response = requests.get(f"{BASE_URL}/files/{file_id}/download")
+print(response.status_code)
+
+if response.status_code == 200:
+		with open("downloaded_file", "wb") as f:
+				f.write(response.content)
+		print("File downloaded successfully")
+else:
+		print(response.text)
+```
+
+### 4) Generate or Fetch Summary
+
+Endpoint:
+- `GET /files/{file_id}/summary`
+
+What it does:
+- Generates an AI summary for the file if not present.
+- Returns cached summary from DB if already generated.
+
+Expected success response (HTTP 200):
+
+```json
+{
+	"file_id": "a716cf9639e14c51a5a490161ff441cf",
+	"filename": "Information_Products.pdf",
+	"summary": "This document discusses ..."
+}
+```
+
+Possible error responses:
+- HTTP 404: unknown `file_id` or file missing from storage
+- HTTP 500: summarization/model processing failed
+
+Postman steps:
+1. Create a new request with method `GET`.
+2. URL: `http://127.0.0.1:8000/files/a716cf9639e14c51a5a490161ff441cf/summary`.
+3. Click Send.
+
+Python example:
+
+```python
+import requests
+
+BASE_URL = "http://127.0.0.1:8000"
+file_id = "a716cf9639e14c51a5a490161ff441cf"
+
+response = requests.get(f"{BASE_URL}/files/{file_id}/summary")
+print(response.status_code)
+print(response.json())
+```
+
+### Suggested Test Flow (End-to-End)
+
+1. Upload one file and copy the returned `file_id`.
+2. List files and confirm your uploaded file appears.
+3. Call summary endpoint with that `file_id` and verify `summary` is returned.
+4. Call download endpoint with the same `file_id` and verify file downloads.
+
 ## Prerequisites
 
 Install the following before running the project:
