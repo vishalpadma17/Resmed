@@ -32,12 +32,16 @@ app.add_middleware(
 # Directory where uploaded files are stored
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+INDEX_FILE = STATIC_DIR / "index.html"
 
 
 # ---------------------------------------------------------------------------
 # API 1 – Upload a file
 # ---------------------------------------------------------------------------
 @app.post("/upload")
+@app.post("/api/upload")
 async def upload_file(document: UploadFile = File(...)):
     """Accept a file upload (multipart/form-data) and return a unique file ID."""
     try:
@@ -45,10 +49,23 @@ async def upload_file(document: UploadFile = File(...)):
         safe_name = document.filename or "unnamed"
         dest = UPLOAD_DIR / f"{file_id}_{safe_name}"
 
+        file_size = 0
         with open(dest, "wb") as buf:
-            shutil.copyfileobj(document.file, buf)
+            while True:
+                chunk = await document.read(1024 * 1024)
+                if not chunk:
+                    break
 
-        file_size = os.path.getsize(dest)
+                file_size += len(chunk)
+                if file_size > MAX_UPLOAD_SIZE_BYTES:
+                    buf.close()
+                    if dest.exists():
+                        dest.unlink()
+                    raise HTTPException(status_code=400, detail="File size should be 20MB or less")
+
+                buf.write(chunk)
+
+        await document.close()
         uploaded_at = datetime.utcnow().isoformat()
 
         insert_file(
@@ -60,6 +77,8 @@ async def upload_file(document: UploadFile = File(...)):
 
         return {"file_id": file_id, "filename": safe_name}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Upload failed for file_id=%s with error: %s", file_id, str(e))
         raise HTTPException(status_code=500, detail="The file could not be uploaded at this time. Please try again or contact the admin.")
@@ -69,6 +88,7 @@ async def upload_file(document: UploadFile = File(...)):
 # API 2 – Download a file by ID
 # ---------------------------------------------------------------------------
 @app.get("/files/{file_id}/download")
+@app.get("/api/files/{file_id}/download")
 async def download_file(file_id: str):
     """Download the file associated with the given ID."""
     try:
@@ -98,6 +118,7 @@ async def download_file(file_id: str):
 # API 3 – List all uploaded files (metadata only)
 # ---------------------------------------------------------------------------
 @app.get("/files")
+@app.get("/api/files")
 async def list_files():
     """Return metadata for every uploaded file (no content)."""
     try:
@@ -112,6 +133,7 @@ async def list_files():
 # API 4 – Get an LLM-generated summary of a file
 # ---------------------------------------------------------------------------
 @app.get("/files/{file_id}/summary")
+@app.get("/api/files/{file_id}/summary")
 async def get_file_summary(file_id: str):
     """Return an LLM-generated summary for the file with the given ID."""
     try:
@@ -153,6 +175,28 @@ async def get_file_summary(file_id: str):
         raise HTTPException(status_code=500, detail="The summarization of the current document is not possible. Please contact the admin.")
 
 
+@app.get("/", include_in_schema=False)
+async def serve_frontend_root():
+    """Serve the React application's entry point when available."""
+    if INDEX_FILE.exists():
+        return FileResponse(path=str(INDEX_FILE))
+    raise HTTPException(status_code=404, detail="Frontend build not found. Run npm run build in the frontend folder.")
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_frontend(full_path: str):
+    """Serve built static files and fallback to index.html for client-side routing."""
+    requested_path = (STATIC_DIR / full_path).resolve()
+
+    if requested_path.is_file() and STATIC_DIR in requested_path.parents:
+        return FileResponse(path=str(requested_path))
+
+    if INDEX_FILE.exists():
+        return FileResponse(path=str(INDEX_FILE))
+
+    raise HTTPException(status_code=404, detail="Frontend build not found. Run npm run build in the frontend folder.")
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

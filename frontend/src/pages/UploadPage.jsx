@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-
 function formatBytes(bytes) {
   if (bytes < 1024) {
     return `${bytes} B`;
@@ -44,14 +42,6 @@ function UploadPage() {
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setSelectedFile(null);
-      event.target.value = '';
-      setIsError(true);
-      setStatusMessage('File is too large. Please select a file up to 20 MB.');
-      return;
-    }
-
     setSelectedFile(file);
   };
 
@@ -63,12 +53,6 @@ function UploadPage() {
     if (!selectedFile) {
       setIsError(true);
       setStatusMessage('Please choose one file before submitting.');
-      return;
-    }
-
-    if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
-      setIsError(true);
-      setStatusMessage('File is too large. Please select a file up to 20 MB.');
       return;
     }
 
@@ -119,7 +103,7 @@ function UploadPage() {
               onChange={handleFileChange}
             />
             <span className="upload-headline">Upload a Document</span>
-            <span className="upload-help-text">One file at a time, max size 20 MB.</span>
+            <span className="upload-help-text">One file at a time. Accepted formats: PDF, DOCX, TXT.</span>
             {fileDetails ? <span className="upload-file-meta">{fileDetails}</span> : null}
           </label>
 
