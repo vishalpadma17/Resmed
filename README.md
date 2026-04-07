@@ -263,6 +263,8 @@ cd backend
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
+# macOS/Linux
+# source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
@@ -296,12 +298,80 @@ cd backend
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
+# macOS/Linux
+# source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
 
 Open:
 - App: `http://localhost:8000`
+
+## Running Automated Test Scripts
+
+Use these steps to run all API endpoint tests from the `test scripts` folder.
+
+### Step 1: Open terminal in project root
+
+Make sure your terminal is in the repository root (the folder containing `backend`, `frontend`, and `test scripts`).
+
+```bash
+cd <path-to-project-root>
+```
+
+### Step 2: Activate Python virtual environment
+
+Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+### Step 3: Install backend dependencies (if not already installed)
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+### Step 4: Run the master test runner
+
+Windows:
+
+```bash
+python "test scripts/run_all_tests.py"
+```
+
+macOS/Linux (if `python` points to Python 2 on your machine):
+
+```bash
+python3 "test scripts/run_all_tests.py"
+```
+
+### Step 5: Read the status report
+
+The script prints an `Endpoint Test Status Report` table with:
+
+- Test Case: Human-readable test case name
+- Endpoint: API endpoint being tested
+- Result: `PASS`, `FAIL`, or `ERROR`
+
+At the bottom, it also prints totals:
+
+- Total tests run
+- Passed count
+- Failed count
+- Error count
+
+### Notes about upload testing
+
+- Positive upload test uses `test_data/Sample_word_contract.docx`.
+- Upload limit negative test validates rejection for files larger than 20 MB.
 
 ## How to Use the App
 
