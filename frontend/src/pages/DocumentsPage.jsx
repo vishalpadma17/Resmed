@@ -24,7 +24,7 @@ function DocumentsPage() {
 
     async function fetchFiles() {
       try {
-        const res = await fetch('/api/files');
+        const res = await fetch('/files');
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.detail || `Failed to load files (${res.status})`);

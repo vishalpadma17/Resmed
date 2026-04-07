@@ -41,10 +41,10 @@ INDEX_FILE = STATIC_DIR / "index.html"
 # API 1 – Upload a file
 # ---------------------------------------------------------------------------
 @app.post("/upload")
-@app.post("/api/upload")
 async def upload_file(document: UploadFile = File(...)):
     """Accept a file upload (multipart/form-data) and return a unique file ID."""
     try:
+        
         file_id = uuid.uuid4().hex
         safe_name = document.filename or "unnamed"
         dest = UPLOAD_DIR / f"{file_id}_{safe_name}"
@@ -88,10 +88,10 @@ async def upload_file(document: UploadFile = File(...)):
 # API 2 – Download a file by ID
 # ---------------------------------------------------------------------------
 @app.get("/files/{file_id}/download")
-@app.get("/api/files/{file_id}/download")
 async def download_file(file_id: str):
     """Download the file associated with the given ID."""
     try:
+        
         meta = get_file(file_id)
         if not meta:
             raise HTTPException(status_code=404, detail="The requested document could not be found. Please check the file and try again.")
@@ -118,7 +118,6 @@ async def download_file(file_id: str):
 # API 3 – List all uploaded files (metadata only)
 # ---------------------------------------------------------------------------
 @app.get("/files")
-@app.get("/api/files")
 async def list_files():
     """Return metadata for every uploaded file (no content)."""
     try:
@@ -133,7 +132,6 @@ async def list_files():
 # API 4 – Get an LLM-generated summary of a file
 # ---------------------------------------------------------------------------
 @app.get("/files/{file_id}/summary")
-@app.get("/api/files/{file_id}/summary")
 async def get_file_summary(file_id: str):
     """Return an LLM-generated summary for the file with the given ID."""
     try:

@@ -64,7 +64,7 @@ function UploadPage() {
     setStatusMessage('');
 
     try {
-      const res = await fetch('/api/upload', {
+      const res = await fetch('/upload', {
         method: 'POST',
         body: formData,
       });

@@ -10,13 +10,14 @@ function DocumentDetailPage() {
   const [summary, setSummary] = useState('');
   const [summarizing, setSummarizing] = useState(false);
   const [summaryError, setSummaryError] = useState('');
+  const [downloadError, setDownloadError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
 
     async function fetchFile() {
       try {
-        const res = await fetch('/api/files');
+        const res = await fetch('/files');
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.detail || `Failed to load file (${res.status})`);
@@ -37,12 +38,28 @@ function DocumentDetailPage() {
   }, [fileId]);
 
   async function handleDownload() {
-    const link = document.createElement('a');
-    link.href = `/api/files/${fileId}/download`;
-    link.download = meta?.filename || 'file';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setDownloadError('');
+
+    try {
+      const res = await fetch(`/files/${fileId}/download`);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Download failed, please contact the admin.');
+      }
+
+      const blob = await res.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = meta?.filename || 'file';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      setDownloadError(err.message || 'Download failed, please contact the admin.');
+    }
   }
 
   async function handleSummarize() {
@@ -50,7 +67,7 @@ function DocumentDetailPage() {
     setSummaryError('');
     setSummary('');
     try {
-      const res = await fetch(`/api/files/${fileId}/summary`);
+      const res = await fetch(`/files/${fileId}/summary`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || `Summary failed (${res.status})`);
@@ -111,6 +128,10 @@ function DocumentDetailPage() {
                   {summarizing ? 'Summarizing…' : 'Summarize'}
                 </button>
               </div>
+
+              {downloadError && (
+                <p className="docs-status docs-error">{downloadError}</p>
+              )}
 
               {summaryError && (
                 <p className="docs-status docs-error">{summaryError}</p>
