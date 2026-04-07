@@ -55,7 +55,9 @@ function UploadPage() {
     setSelectedFile(file);
   };
 
-  const handleSubmit = (event) => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!selectedFile) {
@@ -73,9 +75,31 @@ function UploadPage() {
     const formData = new FormData();
     formData.append('document', selectedFile);
 
-    // Placeholder success flow until backend upload endpoint is connected.
+    setIsUploading(true);
     setIsError(false);
-    setStatusMessage('File is ready and validated with multipart/form-data payload.');
+    setStatusMessage('');
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Upload failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      setIsError(false);
+      setStatusMessage(`Uploaded successfully: ${data.filename}`);
+      setSelectedFile(null);
+    } catch (err) {
+      setIsError(true);
+      setStatusMessage(err.message || 'Upload failed. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -107,8 +131,8 @@ function UploadPage() {
             <button className="small-ghost-button" type="button" onClick={() => navigate('/')}>
               Back
             </button>
-            <button className="small-solid-button" type="submit">
-              Enter
+            <button className="small-solid-button" type="submit" disabled={isUploading}>
+              {isUploading ? 'Uploading…' : 'Enter'}
             </button>
           </div>
         </form>

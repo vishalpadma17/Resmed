@@ -3,5 +3,5 @@ uvicorn
 python-multipart
 PyPDF2
 python-docx
-transformers
+transformers>=4.30,<5
 torch

@@ -1,12 +1,16 @@
 import os
 import uuid
 import shutil
+import logging
 from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 from extract_and_summarize import extract_and_summarize
 from database import init_db, insert_file, get_file, get_all_files, update_summary
@@ -26,7 +30,7 @@ app.add_middleware(
 )
 
 # Directory where uploaded files are stored
-UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 
@@ -57,7 +61,8 @@ async def upload_file(document: UploadFile = File(...)):
         return {"file_id": file_id, "filename": safe_name}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        logger.exception("Upload failed for file_id=%s with error: %s", file_id, str(e))
+        raise HTTPException(status_code=500, detail="The file could not be uploaded at this time. Please try again or contact the admin.")
 
 
 # ---------------------------------------------------------------------------
@@ -69,12 +74,12 @@ async def download_file(file_id: str):
     try:
         meta = get_file(file_id)
         if not meta:
-            raise HTTPException(status_code=404, detail="File not found.")
+            raise HTTPException(status_code=404, detail="The requested document could not be found. Please check the file and try again.")
 
         # Locate the file on disk using the stored file_id + filename
         matches = list(UPLOAD_DIR.glob(f"{file_id}_*"))
         if not matches or not matches[0].exists():
-            raise HTTPException(status_code=404, detail="File missing from storage.")
+            raise HTTPException(status_code=404, detail="The requested document could not be found in storage. Please contact the admin.")
 
         return FileResponse(
             path=str(matches[0]),
@@ -85,7 +90,8 @@ async def download_file(file_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
+        logger.exception("Download failed for file_id=%s with error: %s", file_id, str(e))
+        raise HTTPException(status_code=500, detail="The file could not be downloaded at this time. Please try again or contact the admin.")
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +104,8 @@ async def list_files():
         return {"files": get_all_files()}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not list files: {str(e)}")
+        logger.exception("Failed to list files due to error %s", str(e))
+        raise HTTPException(status_code=500, detail="Unable to retrieve the document list. Please try again or contact the admin.")
 
 
 # ---------------------------------------------------------------------------
@@ -110,16 +117,25 @@ async def get_file_summary(file_id: str):
     try:
         meta = get_file(file_id)
         if not meta:
-            raise HTTPException(status_code=404, detail="File not found.")
+            raise HTTPException(status_code=404, detail="The requested document could not be found. Please check the file and try again.")
+
+        # Return cached summary if available
+        if meta.get("summary"):
+            return {
+                "file_id": file_id,
+                "filename": meta["filename"],
+                "summary": meta["summary"],
+            }
 
         matches = list(UPLOAD_DIR.glob(f"{file_id}_*"))
         if not matches or not matches[0].exists():
-            raise HTTPException(status_code=404, detail="File missing from storage.")
+            raise HTTPException(status_code=404, detail="The requested document could not be found in storage. Please contact the admin.")
 
         summary = extract_and_summarize(str(matches[0]))
 
         if summary.startswith("Error:"):
-            raise HTTPException(status_code=500, detail=summary)
+            logger.error("Summarization returned an error for file_id=%s: %s", file_id, summary)
+            raise HTTPException(status_code=500, detail="The summarization of the current document is not possible. Please contact the admin.")
 
         # Persist the summary in the database
         update_summary(file_id, summary)
@@ -133,4 +149,10 @@ async def get_file_summary(file_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Summary generation failed: {str(e)}")
+        logger.exception("Summary generation failed for file_id=%s with error: %s", file_id, str(e))
+        raise HTTPException(status_code=500, detail="The summarization of the current document is not possible. Please contact the admin.")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

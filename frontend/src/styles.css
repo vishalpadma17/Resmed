@@ -332,3 +332,208 @@ body {
     justify-content: center;
   }
 }
+
+/* ---- Documents page ---- */
+
+.docs-panel {
+  grid-template-rows: auto 1fr;
+}
+
+.docs-content {
+  margin-top: clamp(1.1rem, 2.5vw, 1.8rem);
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.docs-heading {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+  color: var(--text-main);
+}
+
+.docs-status {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 1.02rem;
+}
+
+.docs-error {
+  color: #8a1c1c;
+  font-weight: 600;
+}
+
+.docs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+  max-height: clamp(200px, 40vh, 420px);
+  overflow-y: auto;
+}
+
+.docs-item {
+  border: 2px solid var(--line-soft);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.78));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.docs-item-detail {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  padding: 0.9rem 1.1rem;
+}
+
+.docs-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.docs-label {
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.docs-value {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  text-align: right;
+  word-break: break-all;
+}
+
+.docs-item:hover {
+  border-color: var(--upload-accent);
+  box-shadow: 0 4px 12px rgba(0, 114, 178, 0.12);
+}
+
+.docs-filename {
+  font-weight: 600;
+  color: var(--text-main);
+  word-break: break-all;
+}
+
+.docs-id {
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem;
+  color: var(--text-subtle);
+}
+
+.docs-meta {
+  white-space: nowrap;
+  color: var(--text-subtle);
+  font-size: 0.92rem;
+}
+
+/* ---- Document clickable items ---- */
+
+.docs-item-clickable {
+  cursor: pointer;
+}
+
+.docs-item-clickable:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---- Document detail page ---- */
+
+.detail-panel {
+  grid-template-rows: auto 1fr;
+}
+
+.detail-content {
+  margin-top: clamp(1.1rem, 2.5vw, 1.8rem);
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.detail-card {
+  border: 2px solid var(--line-soft);
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.78));
+  display: grid;
+  gap: 0.55rem;
+}
+
+.detail-doc-name {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+  color: var(--text-main);
+  word-break: break-all;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  min-width: 130px;
+}
+
+.detail-value {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  text-align: right;
+  word-break: break-all;
+}
+
+.detail-id {
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem;
+  color: var(--text-subtle);
+}
+
+.detail-actions {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.detail-summary {
+  border: 2px solid var(--line-soft);
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.78));
+}
+
+.detail-summary-heading {
+  margin: 0 0 0.5rem;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.detail-summary-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
