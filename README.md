@@ -54,6 +54,12 @@ Frontend dependencies (from `frontend/package.json`):
 - `vite`
 - `@vitejs/plugin-react`
 
+Database Setup:
+- The app uses SQLite, which is file-based and requires no separate server setup.
+- The repo includes a .db files which has data inside which can be used while using the app for the first time. 
+- The sample data is already present in the .db file, in case of you want to start fresh delete the file and run the app.py in the backend.
+- This way when you start upload documents, data will be saved for the newly added files and newly generated summarizes.
+
 ## Running Frontend and Backend
 
 There are two common ways to run this repo.
