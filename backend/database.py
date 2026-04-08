@@ -20,19 +20,35 @@ def init_db():
             filename  TEXT NOT NULL,
             size      INTEGER NOT NULL,
             uploaded_at TEXT NOT NULL,
-            summary   TEXT DEFAULT ''
+            summary   TEXT DEFAULT '',
+            file_content TEXT DEFAULT ''
         )
         """
     )
+
+    columns = [row["name"] for row in conn.execute("PRAGMA table_info(files)").fetchall()]
+    if "file_content" not in columns:
+        conn.execute("ALTER TABLE files ADD COLUMN file_content TEXT DEFAULT ''")
+
     conn.commit()
     conn.close()
 
 
-def insert_file(file_id: str, filename: str, size: int, uploaded_at: str, summary: str = ""):
+def insert_file(
+    file_id: str,
+    filename: str,
+    size: int,
+    uploaded_at: str,
+    summary: str = "",
+    file_content: str = "",
+):
     conn = get_connection()
     conn.execute(
-        "INSERT INTO files (file_id, filename, size, uploaded_at, summary) VALUES (?, ?, ?, ?, ?)",
-        (file_id, filename, size, uploaded_at, summary),
+        """
+        INSERT INTO files (file_id, filename, size, uploaded_at, summary, file_content)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (file_id, filename, size, uploaded_at, summary, file_content),
     )
     conn.commit()
     conn.close()
@@ -47,7 +63,13 @@ def get_file(file_id: str) -> dict | None:
 
 def get_all_files() -> list[dict]:
     conn = get_connection()
-    rows = conn.execute("SELECT * FROM files ORDER BY uploaded_at DESC").fetchall()
+    rows = conn.execute(
+        """
+        SELECT file_id, filename, size, uploaded_at, summary
+        FROM files
+        ORDER BY uploaded_at DESC
+        """
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 

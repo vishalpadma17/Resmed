@@ -11,6 +11,7 @@ function DocumentDetailPage() {
   const [summarizing, setSummarizing] = useState(false);
   const [summaryError, setSummaryError] = useState('');
   const [downloadError, setDownloadError] = useState('');
+  const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +67,7 @@ function DocumentDetailPage() {
     setSummarizing(true);
     setSummaryError('');
     setSummary('');
+    setCopyStatus('');
     try {
       const res = await fetch(`/files/${fileId}/summary`);
       if (!res.ok) {
@@ -78,6 +80,17 @@ function DocumentDetailPage() {
       setSummaryError(err.message);
     } finally {
       setSummarizing(false);
+    }
+  }
+
+  async function handleCopySummary() {
+    if (!summary) return;
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopyStatus('Summary copied.');
+    } catch {
+      setCopyStatus('Unable to copy summary.');
     }
   }
 
@@ -139,7 +152,17 @@ function DocumentDetailPage() {
 
               {summary && (
                 <div className="detail-summary">
-                  <h3 className="detail-summary-heading">Summary</h3>
+                  <div className="detail-summary-header">
+                    <h3 className="detail-summary-heading">Summary</h3>
+                    <button
+                      className="small-ghost-button detail-copy-button"
+                      type="button"
+                      onClick={handleCopySummary}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  {copyStatus && <p className="detail-copy-status">{copyStatus}</p>}
                   <p className="detail-summary-text">{summary}</p>
                 </div>
               )}

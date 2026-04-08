@@ -390,7 +390,7 @@ At the bottom, it also prints totals:
 - Fix: Run `npm run build` inside `frontend`, then restart backend.
 
 ### 2) Upload fails with file size error
-- Error: `File size should be 20MB or less`
+- Error: `File size should be 25MB or less`
 - Fix: Upload a file under 20 MB.
 
 ### 3) CORS or failed API calls in frontend dev mode

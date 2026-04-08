@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-from extract_and_summarize import extract_and_summarize
+from extract_and_summarize import SUPPORTED_EXTENSIONS, extract_text, summarize_text
 from database import init_db, insert_file, get_file, get_all_files, update_summary
 
 app = FastAPI(title="Study Hive API")
@@ -43,12 +43,20 @@ INDEX_FILE = STATIC_DIR / "index.html"
 @app.post("/upload")
 async def upload_file(document: UploadFile = File(...)):
     """Accept a file upload (multipart/form-data) and return a unique file ID."""
-    try:
-        
-        file_id = uuid.uuid4().hex
-        safe_name = document.filename or "unnamed"
-        dest = UPLOAD_DIR / f"{file_id}_{safe_name}"
+    file_id = uuid.uuid4().hex
+    safe_name = document.filename or "unnamed"
+    suffix = Path(safe_name).suffix.lower()
 
+    if suffix not in SUPPORTED_EXTENSIONS:
+        allowed = ", ".join(sorted(SUPPORTED_EXTENSIONS))
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file extension: {suffix or '(none)'}. Allowed types: {allowed}",
+        )
+
+    dest = UPLOAD_DIR / f"{file_id}_{safe_name}"
+
+    try:
         file_size = 0
         with open(dest, "wb") as buf:
             while True:
@@ -61,11 +69,33 @@ async def upload_file(document: UploadFile = File(...)):
                     buf.close()
                     if dest.exists():
                         dest.unlink()
-                    raise HTTPException(status_code=400, detail="File size should be 20MB or less")
+                    raise HTTPException(status_code=400, detail="File size should be 25MB or less")
 
                 buf.write(chunk)
 
-        await document.close()
+        if file_size == 0:
+            if dest.exists():
+                dest.unlink()
+            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+
+        try:
+            extracted_text = extract_text(str(dest))
+        except RuntimeError:
+            if dest.exists():
+                dest.unlink()
+            raise HTTPException(
+                status_code=400,
+                detail="The uploaded file appears to be corrupted and could not be read.",
+            )
+
+        if not extracted_text.strip():
+            if dest.exists():
+                dest.unlink()
+            raise HTTPException(
+                status_code=400,
+                detail="The uploaded file has no readable content.",
+            )
+
         uploaded_at = datetime.utcnow().isoformat()
 
         insert_file(
@@ -73,6 +103,7 @@ async def upload_file(document: UploadFile = File(...)):
             filename=safe_name,
             size=file_size,
             uploaded_at=uploaded_at,
+            file_content=extracted_text,
         )
 
         return {"file_id": file_id, "filename": safe_name}
@@ -82,6 +113,8 @@ async def upload_file(document: UploadFile = File(...)):
     except Exception as e:
         logger.exception("Upload failed for file_id=%s with error: %s", file_id, str(e))
         raise HTTPException(status_code=500, detail="The file could not be uploaded at this time. Please try again or contact the admin.")
+    finally:
+        await document.close()
 
 
 # ---------------------------------------------------------------------------
@@ -147,15 +180,21 @@ async def get_file_summary(file_id: str):
                 "summary": meta["summary"],
             }
 
-        matches = list(UPLOAD_DIR.glob(f"{file_id}_*"))
-        if not matches or not matches[0].exists():
-            raise HTTPException(status_code=404, detail="The requested document could not be found in storage. Please contact the admin.")
+        file_content = (meta.get("file_content") or "").strip()
+        if not file_content:
+            raise HTTPException(
+                status_code=400,
+                detail="The document content is not available in the database. Please re-upload the file.",
+            )
 
-        summary = extract_and_summarize(str(matches[0]))
-
-        if summary.startswith("Error:"):
-            logger.error("Summarization returned an error for file_id=%s: %s", file_id, summary)
-            raise HTTPException(status_code=500, detail="The summarization of the current document is not possible. Please contact the admin.")
+        try:
+            summary = summarize_text(file_content)
+        except RuntimeError as e:
+            logger.error("Summarization returned an error for file_id=%s: %s", file_id, str(e))
+            raise HTTPException(
+                status_code=500,
+                detail="The summarization of the current document is not possible. Please contact the admin.",
+            )
 
         # Persist the summary in the database
         update_summary(file_id, summary)

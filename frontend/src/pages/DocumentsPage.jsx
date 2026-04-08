@@ -17,7 +17,16 @@ function DocumentsPage() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredFiles = files.filter((file) => {
+    if (!normalizedQuery) return true;
+    const filename = (file.filename || '').toLowerCase();
+    const uniqueId = (file.file_id || '').toLowerCase();
+    return filename.includes(normalizedQuery) || uniqueId.includes(normalizedQuery);
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +63,23 @@ function DocumentsPage() {
         <div className="docs-content">
           <h2 className="docs-heading">Your Documents</h2>
 
+          {!loading && !error && files.length > 0 && (
+            <div className="docs-search-wrap">
+              <label className="docs-search-label" htmlFor="docs-search-input">
+                Search by file name or unique ID
+              </label>
+              <input
+                id="docs-search-input"
+                className="docs-search-input"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type a file name or ID"
+                autoComplete="off"
+              />
+            </div>
+          )}
+
           {loading && <p className="docs-status">Loading…</p>}
           {error && <p className="docs-status docs-error">{error}</p>}
 
@@ -61,9 +87,13 @@ function DocumentsPage() {
             <p className="docs-status">No documents uploaded yet.</p>
           )}
 
-          {!loading && !error && files.length > 0 && (
+          {!loading && !error && files.length > 0 && filteredFiles.length === 0 && (
+            <p className="docs-status">No documents match your search.</p>
+          )}
+
+          {!loading && !error && filteredFiles.length > 0 && (
             <ul className="docs-list">
-              {files.map((f) => (
+              {filteredFiles.map((f) => (
                 <li
                   key={f.file_id}
                   className="docs-item docs-item-detail docs-item-clickable"
