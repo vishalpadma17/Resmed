@@ -1,4 +1,5 @@
 import argparse
+import threading
 from pathlib import Path
 import PyPDF2
 from docx import Document
@@ -6,6 +7,8 @@ from transformers import pipeline
 
 
 SUPPORTED_EXTENSIONS = {".txt", ".docx", ".pdf"}
+_SUMMARIZER_CACHE = {}
+_SUMMARIZER_CACHE_LOCK = threading.Lock()
 
 
 def extract_text(file_path: str) -> str:
@@ -84,6 +87,32 @@ def build_summarizer(model_name: str):
         raise RuntimeError(f"Error loading summarization model '{model_name}': {e}")
 
 
+def get_summarizer(model_name: str):
+    """Return a cached summarizer instance for a model, loading it only once."""
+    try:
+        cached = _SUMMARIZER_CACHE.get(model_name)
+        if cached is not None:
+            return cached
+
+        with _SUMMARIZER_CACHE_LOCK:
+            cached = _SUMMARIZER_CACHE.get(model_name)
+            if cached is None:
+                cached = build_summarizer(model_name)
+                _SUMMARIZER_CACHE[model_name] = cached
+
+        return cached
+    except RuntimeError:
+        raise
+    except Exception as e:
+        raise RuntimeError(f"Error retrieving summarization model '{model_name}': {e}")
+
+
+def reset_summarizer_cache() -> None:
+    """Clear cached summarizer instances. Intended for tests."""
+    with _SUMMARIZER_CACHE_LOCK:
+        _SUMMARIZER_CACHE.clear()
+
+
 def summarize_chunks(
     summarizer,
     chunks,
@@ -122,7 +151,7 @@ def summarize_text(
         if not text:
             return "No readable text found in the file."
 
-        summarizer = build_summarizer(model_name)
+        summarizer = get_summarizer(model_name)
         chunks = chunk_text(text, max_chars=chunk_size)
 
         if not chunks:
